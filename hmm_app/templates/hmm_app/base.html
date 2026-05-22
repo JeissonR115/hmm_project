@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}HMM{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'hmm_app/styles.css' %}">
+</head>
+
+<body>
+  <nav>
+    <a href="{% url 'lista' %}" class="brand">HMM App</a>
+    <a href="{% url 'lista' %}">Experimentos</a>
+    <a href="{% url 'simulador' %}">Simulador</a>
+    <a href="/admin/">Admin</a>
+  </nav>
+  <div class="container">
+    {% if messages %}
+    <div class="msgs">
+      {% for msg in messages %}
+      <div class="msg msg-{{ msg.tags }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </div>
+</body>
+
+</html>
