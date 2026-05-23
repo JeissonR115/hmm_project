@@ -1,97 +1,75 @@
 {% extends "hmm_app/base.html" %}
-{% block title %}{{ exp.nombre }}{% endblock %}
-{% block content %}
-<div class="row" style="margin-bottom:1.5rem">
-  <h1 style="margin:0">{{ exp.nombre }}</h1>
-  <div style="margin-left:auto;display:flex;gap:8px">
-    <a href="{% url 'editar' exp.pk %}" class="btn btn-secondary">Editar</a>
-    <a href="{% url 'eliminar' exp.pk %}" class="btn btn-danger">Eliminar</a>
-  </div>
-</div>
+{% block title %}{{ exp.nombre }} — HMM App{% endblock %}
 
+{% block content %}
+<h1>{{ exp.nombre }}</h1>
 {% if exp.descripcion %}
-<p style="color:#555;margin-bottom:1rem">{{ exp.descripcion }}</p>
+  <p style="color:#555; margin-bottom:1rem;">{{ exp.descripcion }}</p>
 {% endif %}
 
-<div class="grid2">
-  <div class="card">
-    <h2>Forward — P(observaciones | λ)</h2>
-    <p style="font-size:1.6rem;font-weight:600;color:#7c6af7">{{ prob|floatformat:8 }}</p>
-    <p style="font-size:12px;color:#888;margin-top:4px">Creado {{ exp.creado_en|date:"d/m/Y H:i" }}</p>
-  </div>
-  <div class="card">
-    <h2>Estados</h2>
-    <span class="tag tag-p" style="margin-right:6px">{{ exp.estado_0 }}</span>
-    <span class="tag tag-t">{{ exp.estado_1 }}</span>
-    <hr class="sep">
-    <p style="font-size:13px;color:#555">Observaciones: <b>{{ exp.get_obs|length }}</b> pasos</p>
-  </div>
-</div>
-
 <div class="card">
-  <h2>Viterbi — secuencia decodificada</h2>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:0.5rem">
-    {% for obs_n, st_n in pares %}
-    <div style="text-align:center;min-width:64px">
-      <div class="tag tag-c" style="display:block;margin-bottom:4px">{{ obs_n }}</div>
-      <div style="font-size:12px;color:#555">↓</div>
-      <div class="tag {% if st_n == exp.estado_0 %}tag-p{% else %}tag-t{% endif %}"
-        style="display:block;margin-top:4px">{{ st_n }}</div>
-    </div>
+  <h2>Resultado</h2>
+  <p style="font-size:1.1rem; margin-bottom:1rem;">
+    <strong>P(obs | modelo) =</strong>
+    <span style="color:#1a237e; font-size:1.3rem;">{{ prob|floatformat:8 }}</span>
+  </p>
+
+  <h2>Secuencia de Viterbi</h2>
+  <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:1rem;">
+    {% for obs_name, st_name in pares %}
+      <div style="text-align:center; min-width:70px;">
+        <div style="font-size:0.78rem; color:#666; margin-bottom:0.2rem;">{{ obs_name }}</div>
+        <span class="badge" style="background:#e8eaf6; color:#1a237e; display:block;">{{ st_name }}</span>
+      </div>
     {% endfor %}
   </div>
 </div>
 
-<div class="grid3">
+<div class="grid-2">
   <div class="card">
-    <h2>π (inicial)</h2>
-    <p style="font-size:13px">{{ exp.estado_0 }}: <b>{{ pi.0|floatformat:3 }}</b></p>
-    <p style="font-size:13px">{{ exp.estado_1 }}: <b>{{ pi.1|floatformat:3 }}</b></p>
-  </div>
-  <div class="card">
-    <h2>Matriz A</h2>
+    <h2>Parámetros del modelo</h2>
     <table>
-      <tr>
-        <th></th>
-        <th>{{ exp.estado_0 }}</th>
-        <th>{{ exp.estado_1 }}</th>
-      </tr>
-      <tr>
-        <td style="font-size:12px;color:#555">{{ exp.estado_0 }}</td>
-        <td>{{ A.0.0|floatformat:2 }}</td>
-        <td>{{ A.0.1|floatformat:2 }}</td>
-      </tr>
-      <tr>
-        <td style="font-size:12px;color:#555">{{ exp.estado_1 }}</td>
-        <td>{{ A.1.0|floatformat:2 }}</td>
-        <td>{{ A.1.1|floatformat:2 }}</td>
-      </tr>
+      <tr><th>π ({{ exp.estado_0 }})</th><td>{{ pi.0|floatformat:4 }}</td></tr>
+      <tr><th>π ({{ exp.estado_1 }})</th><td>{{ pi.1|floatformat:4 }}</td></tr>
+    </table>
+
+    <p style="margin-top:1rem; margin-bottom:0.4rem;"><strong>Matriz de transición A</strong></p>
+    <table>
+      <thead>
+        <tr><th></th><th>→ {{ exp.estado_0 }}</th><th>→ {{ exp.estado_1 }}</th></tr>
+      </thead>
+      <tbody>
+        <tr><th>{{ exp.estado_0 }}</th><td>{{ A.0.0|floatformat:4 }}</td><td>{{ A.0.1|floatformat:4 }}</td></tr>
+        <tr><th>{{ exp.estado_1 }}</th><td>{{ A.1.0|floatformat:4 }}</td><td>{{ A.1.1|floatformat:4 }}</td></tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top:1rem; margin-bottom:0.4rem;"><strong>Matriz de emisión B</strong></p>
+    <table>
+      <thead>
+        <tr><th></th><th>Caminar</th><th>Compras</th><th>Limpiar</th></tr>
+      </thead>
+      <tbody>
+        <tr><th>{{ exp.estado_0 }}</th><td>{{ B.0.0|floatformat:4 }}</td><td>{{ B.0.1|floatformat:4 }}</td><td>{{ B.0.2|floatformat:4 }}</td></tr>
+        <tr><th>{{ exp.estado_1 }}</th><td>{{ B.1.0|floatformat:4 }}</td><td>{{ B.1.1|floatformat:4 }}</td><td>{{ B.1.2|floatformat:4 }}</td></tr>
+      </tbody>
     </table>
   </div>
+
   <div class="card">
-    <h2>Matriz B</h2>
+    <h2>Metadatos</h2>
     <table>
-      <tr>
-        <th></th>
-        <th>Cam.</th>
-        <th>Com.</th>
-        <th>Lim.</th>
-      </tr>
-      <tr>
-        <td style="font-size:12px;color:#555">{{ exp.estado_0 }}</td>
-        <td>{{ B.0.0|floatformat:2 }}</td>
-        <td>{{ B.0.1|floatformat:2 }}</td>
-        <td>{{ B.0.2|floatformat:2 }}</td>
-      </tr>
-      <tr>
-        <td style="font-size:12px;color:#555">{{ exp.estado_1 }}</td>
-        <td>{{ B.1.0|floatformat:2 }}</td>
-        <td>{{ B.1.1|floatformat:2 }}</td>
-        <td>{{ B.1.2|floatformat:2 }}</td>
-      </tr>
+      <tr><th>Estado 0</th><td>{{ exp.estado_0 }}</td></tr>
+      <tr><th>Estado 1</th><td>{{ exp.estado_1 }}</td></tr>
+      <tr><th>Observaciones</th><td>{{ exp.get_obs_names|join:", " }}</td></tr>
+      <tr><th>Creado</th><td>{{ exp.creado_en|date:"d/m/Y H:i" }}</td></tr>
     </table>
   </div>
 </div>
 
-<a href="{% url 'lista' %}" class="btn btn-secondary">← Volver</a>
+<div class="actions">
+  <a href="{% url 'editar' exp.pk %}" class="btn btn-secondary">Editar</a>
+  <a href="{% url 'eliminar' exp.pk %}" class="btn btn-danger">Eliminar</a>
+  <a href="{% url 'lista' %}" class="btn btn-secondary">← Volver</a>
+</div>
 {% endblock %}

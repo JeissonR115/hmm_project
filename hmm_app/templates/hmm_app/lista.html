@@ -1,64 +1,64 @@
 {% extends "hmm_app/base.html" %}
-{% block title %}Experimentos — HMM{% endblock %}
+{% block title %}Experimentos — HMM App{% endblock %}
+
 {% block content %}
-<div class="row" style="margin-bottom:1.5rem">
-  <h1 style="margin:0">Experimentos guardados</h1>
-  <a href="{% url 'crear' %}" class="btn btn-primary" style="margin-left:auto">+ Nuevo</a>
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+  <h1>Experimentos</h1>
+  <a href="{% url 'crear' %}" class="btn btn-primary">+ Nuevo experimento</a>
 </div>
 
 {% if experimentos %}
-<div class="card" style="padding:0">
-  <table>
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>Estados</th>
-        <th>P(obs)</th>
-        <th>Creado</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for exp in experimentos %}
-      <tr>
-        <td><a href="{% url 'detalle' exp.pk %}">{{ exp.nombre }}</a></td>
-        <td>
-          <span class="tag tag-p">{{ exp.estado_0 }}</span>
-          <span class="tag tag-t">{{ exp.estado_1 }}</span>
-        </td>
-        <td>
-          {% if exp.probabilidad_forward %}
-          {{ exp.probabilidad_forward|floatformat:6 }}
-          {% else %}—{% endif %}
-        </td>
-        <td style="font-size:13px;color:#888">{{ exp.creado_en|date:"d/m/Y H:i" }}</td>
-        <td>
-          <a href="{% url 'editar' exp.pk %}" class="btn btn-secondary"
-            style="font-size:12px;padding:4px 10px">Editar</a>
-          <a href="{% url 'eliminar' exp.pk %}" class="btn btn-danger"
-            style="font-size:12px;padding:4px 10px">Eliminar</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+  <div class="card" style="padding:0;">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Estados</th>
+          <th>P(obs|modelo)</th>
+          <th>Creado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for exp in experimentos %}
+        <tr>
+          <td><strong>{{ exp.nombre }}</strong></td>
+          <td>
+            <span class="badge badge-state0">{{ exp.estado_0 }}</span>
+            <span class="badge badge-state1">{{ exp.estado_1 }}</span>
+          </td>
+          <td>
+            {% if exp.probabilidad_forward %}
+              {{ exp.probabilidad_forward|floatformat:6 }}
+            {% else %}—{% endif %}
+          </td>
+          <td style="color:#666; font-size:0.85rem;">{{ exp.creado_en|date:"d/m/Y H:i" }}</td>
+          <td>
+            <a href="{% url 'detalle' exp.pk %}" class="btn btn-secondary" style="font-size:0.82rem;">Ver</a>
+            <a href="{% url 'editar' exp.pk %}" class="btn btn-secondary" style="font-size:0.82rem;">Editar</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-{% if is_paginated %}
-<div class="row" style="margin-top:1rem;gap:4px">
-  {% if page_obj.has_previous %}
-  <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-secondary">‹ Anterior</a>
+  {% if is_paginated %}
+    <div class="pagination">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}">&laquo; Anterior</a>
+      {% endif %}
+      <span class="current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}">Siguiente &raquo;</a>
+      {% endif %}
+    </div>
   {% endif %}
-  <span style="font-size:13px;color:#888">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
-  {% if page_obj.has_next %}
-  <a href="?page={{ page_obj.next_page_number }}" class="btn btn-secondary">Siguiente ›</a>
-  {% endif %}
-</div>
-{% endif %}
 
 {% else %}
-<div class="card" style="text-align:center;color:#888;padding:3rem">
-  No hay experimentos aún. <a href="{% url 'crear' %}">Crea uno</a>.
-</div>
+  <div class="card" style="text-align:center; color:#666; padding:3rem;">
+    <p>No hay experimentos aún.</p>
+    <a href="{% url 'crear' %}" class="btn btn-primary" style="margin-top:1rem;">Crear el primero</a>
+  </div>
 {% endif %}
 {% endblock %}

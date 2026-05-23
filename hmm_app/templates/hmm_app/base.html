@@ -1,266 +1,85 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}HMM{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}HMM App{% endblock %}</title>
   <style>
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: system-ui, sans-serif;
-      font-size: 15px;
-      line-height: 1.6;
-      background: #f5f5f5;
-      color: #1a1a1a;
-    }
-
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f7fa; color: #222; }
     nav {
-      background: #1e1e2e;
-      padding: 0 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      height: 50px;
+      background: #1a237e; color: #fff; padding: 0.75rem 1.5rem;
+      display: flex; align-items: center; gap: 1.5rem;
     }
-
-    nav a {
-      color: #cdd6f4;
-      text-decoration: none;
-      font-size: 14px;
-    }
-
-    nav a:hover {
-      color: #fff;
-    }
-
-    nav .brand {
-      color: #cba6f7;
-      font-weight: 600;
-      font-size: 15px;
-      margin-right: auto;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-    }
-
-    h1 {
-      font-size: 1.4rem;
-      font-weight: 600;
-      margin-bottom: 1.5rem;
-    }
-
-    h2 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-    }
-
+    nav a { color: #c5cae9; text-decoration: none; font-size: 0.95rem; }
+    nav a:hover { color: #fff; }
+    nav .brand { font-weight: 700; font-size: 1.1rem; color: #fff; margin-right: auto; }
+    .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.6rem; margin-bottom: 1.25rem; color: #1a237e; }
+    h2 { font-size: 1.2rem; margin-bottom: 0.75rem; color: #283593; }
     .card {
-      background: #fff;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 1.25rem;
-      margin-bottom: 1rem;
+      background: #fff; border-radius: 8px; padding: 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 1.25rem;
     }
-
-    .field {
-      width: 100%;
-      padding: 6px 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 14px;
-    }
-
-    .field:focus {
-      outline: none;
-      border-color: #7c6af7;
-    }
-
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    th { background: #e8eaf6; text-align: left; padding: 0.5rem 0.75rem; }
+    td { padding: 0.45rem 0.75rem; border-bottom: 1px solid #eee; }
+    tr:last-child td { border-bottom: none; }
     .btn {
-      display: inline-block;
-      padding: 7px 16px;
-      border-radius: 5px;
-      font-size: 14px;
-      cursor: pointer;
-      border: 1px solid transparent;
-      text-decoration: none;
+      display: inline-block; padding: 0.45rem 1rem; border-radius: 5px;
+      font-size: 0.9rem; text-decoration: none; cursor: pointer; border: none;
     }
-
-    .btn-primary {
-      background: #7c6af7;
-      color: #fff;
+    .btn-primary   { background: #1a237e; color: #fff; }
+    .btn-secondary { background: #e8eaf6; color: #1a237e; }
+    .btn-danger    { background: #c62828; color: #fff; }
+    .btn:hover { opacity: 0.88; }
+    .field {
+      width: 100%; padding: 0.4rem 0.6rem; border: 1px solid #ccd;
+      border-radius: 4px; font-size: 0.92rem; margin-top: 0.2rem;
     }
-
-    .btn-primary:hover {
-      background: #6a58e0;
+    .field:focus { outline: 2px solid #3949ab; border-color: #3949ab; }
+    label { font-size: 0.85rem; font-weight: 600; color: #444; }
+    .form-group { margin-bottom: 0.85rem; }
+    .error-list { color: #c62828; font-size: 0.82rem; margin-top: 0.2rem; }
+    .messages { list-style: none; margin-bottom: 1rem; }
+    .messages li {
+      padding: 0.6rem 1rem; border-radius: 5px; margin-bottom: 0.4rem; font-size: 0.9rem;
     }
-
-    .btn-danger {
-      background: #e74c3c;
-      color: #fff;
+    .messages .success { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #43a047; }
+    .messages .error   { background: #ffebee; color: #c62828; border-left: 4px solid #e53935; }
+    .badge {
+      display: inline-block; font-size: 0.78rem; padding: 0.2rem 0.55rem;
+      border-radius: 12px; font-weight: 600;
     }
-
-    .btn-danger:hover {
-      background: #c0392b;
+    .badge-state0 { background: #e3f2fd; color: #1565c0; }
+    .badge-state1 { background: #fff8e1; color: #e65100; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+    .pagination { display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem; }
+    .pagination a, .pagination span {
+      padding: 0.35rem 0.75rem; border-radius: 4px;
+      background: #e8eaf6; color: #1a237e; text-decoration: none; font-size: 0.88rem;
     }
-
-    .btn-secondary {
-      background: #fff;
-      border-color: #ccc;
-      color: #333;
-    }
-
-    .btn-secondary:hover {
-      background: #f0f0f0;
-    }
-
-    .msgs {
-      margin-bottom: 1rem;
-    }
-
-    .msg {
-      padding: 8px 12px;
-      border-radius: 5px;
-      font-size: 13px;
-      margin-bottom: 6px;
-    }
-
-    .msg-success {
-      background: #d4edda;
-      color: #155724;
-    }
-
-    .msg-error {
-      background: #f8d7da;
-      color: #721c24;
-    }
-
-    .grid2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .grid3 {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 12px;
-    }
-
-    .form-group {
-      margin-bottom: 12px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 13px;
-      color: #555;
-      margin-bottom: 3px;
-      font-weight: 500;
-    }
-
-    .form-group .help {
-      font-size: 12px;
-      color: #888;
-      margin-top: 2px;
-    }
-
-    .form-group .error {
-      font-size: 12px;
-      color: #c0392b;
-      margin-top: 2px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-
-    th {
-      text-align: left;
-      padding: 8px 10px;
-      border-bottom: 2px solid #eee;
-      font-weight: 600;
-      font-size: 13px;
-      color: #555;
-    }
-
-    td {
-      padding: 8px 10px;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    tr:hover td {
-      background: #fafafa;
-    }
-
-    .tag {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 500;
-    }
-
-    .tag-p {
-      background: #ede9fe;
-      color: #4c1d95;
-    }
-
-    .tag-t {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .tag-c {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .sep {
-      border: none;
-      border-top: 1px solid #eee;
-      margin: 1rem 0;
-    }
-
-    .row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+    .pagination .current { background: #1a237e; color: #fff; }
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
   </style>
 </head>
-
 <body>
   <nav>
-    <a href="{% url 'lista' %}" class="brand">HMM App</a>
+    <span class="brand">HMM App</span>
     <a href="{% url 'lista' %}">Experimentos</a>
+    <a href="{% url 'crear' %}">+ Nuevo</a>
     <a href="{% url 'simulador' %}">Simulador</a>
-    <a href="/admin/">Admin</a>
   </nav>
   <div class="container">
     {% if messages %}
-    <div class="msgs">
-      {% for msg in messages %}
-      <div class="msg msg-{{ msg.tags }}">{{ msg }}</div>
-      {% endfor %}
-    </div>
+      <ul class="messages">
+        {% for m in messages %}
+          <li class="{{ m.tags }}">{{ m }}</li>
+        {% endfor %}
+      </ul>
     {% endif %}
     {% block content %}{% endblock %}
   </div>
 </body>
-
 </html>

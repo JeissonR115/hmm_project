@@ -1,13 +1,16 @@
 {% extends "hmm_app/base.html" %}
-{% block title %}Eliminar {{ exp.nombre }}{% endblock %}
+{% block title %}Eliminar {{ exp.nombre }} — HMM App{% endblock %}
+
 {% block content %}
 <h1>Eliminar experimento</h1>
-<div class="card">
-  <p>¿Seguro que quieres eliminar <b>{{ exp.nombre }}</b>? Esta acción no se puede deshacer.</p>
-  <hr class="sep">
+<div class="card" style="max-width:480px;">
+  <p style="margin-bottom:1rem;">
+    ¿Estás seguro de que deseas eliminar <strong>{{ exp.nombre }}</strong>?
+    Esta acción no se puede deshacer.
+  </p>
   <form method="post">
     {% csrf_token %}
-    <div class="row">
+    <div class="actions">
       <button type="submit" class="btn btn-danger">Sí, eliminar</button>
       <a href="{% url 'detalle' exp.pk %}" class="btn btn-secondary">Cancelar</a>
     </div>

@@ -1,253 +1,166 @@
 {% extends "hmm_app/base.html" %}
-{% block title %}Simulador HMM{% endblock %}
+{% block title %}Simulador — HMM App{% endblock %}
+
 {% block content %}
+<h1>Simulador HMM</h1>
+<p style="color:#555; margin-bottom:1.25rem;">
+  Prueba parámetros sin guardar. Activa Baum-Welch para re-estimar el modelo con EM (15 iteraciones).
+</p>
 
-<h1>Simulador — Modelo Oculto de Markov</h1>
-
-{% comment %} ── Explicación del ejemplo ── {% endcomment %}
-<div class="card" style="border-left:4px solid #7c6af7;padding-left:1.25rem">
-  <h2 style="margin-bottom:0.5rem">¿Qué estamos haciendo aquí?</h2>
-  <p style="color:#444;font-size:14px;margin-bottom:0.75rem">
-    Tienes un amigo que vive lejos. Cada día te dice qué hizo, pero tú <strong>nunca ves el clima</strong> donde él
-    vive.
-    El modelo intenta adivinar el clima a partir de las actividades.
-  </p>
-  <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:13px">
-    <div style="background:#f5f0ff;border-radius:6px;padding:8px 14px">
-      <strong>Lo que SÍ ves (observaciones)</strong><br>
-      🚶 Caminar = 0<br>
-      🛒 Compras = 1<br>
-      🧹 Limpiar = 2
-    </div>
-    <div style="font-size:22px;align-self:center;color:#aaa">→</div>
-    <div style="background:#f0fdf4;border-radius:6px;padding:8px 14px">
-      <strong>Lo que quieres saber (estados ocultos)</strong><br>
-      🌧️ Estado 0 = Lluvia<br>
-      ☀️ Estado 1 = Sol
-    </div>
-  </div>
-</div>
-
-<form method="post">
+<form method="post" novalidate>
   {% csrf_token %}
 
-  {% comment %} ── Secuencia de días ── {% endcomment %}
   <div class="card">
-    <h2>Paso 1 — ¿Qué hizo tu amigo cada día?</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:0.75rem">
-      Escribe la secuencia de actividades separadas por coma.<br>
-      Ejemplo: <code>0,1,2,0,0,1</code> = Caminó, fue de compras, limpió, caminó, caminó, fue de compras.
-    </p>
+    <h2>Estados</h2>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Nombre estado 0</label>
+        <input class="field" type="text" name="s0" value="{{ form_data.s0|default:'Lluvia' }}">
+      </div>
+      <div class="form-group">
+        <label>Nombre estado 1</label>
+        <input class="field" type="text" name="s1" value="{{ form_data.s1|default:'Sol' }}">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>π inicial</h2>
+    <p style="font-size:0.82rem; color:#666; margin-bottom:0.75rem;">Debe sumar 1.0</p>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>π estado 0</label>
+        <input class="field" type="number" name="pi0" step="0.01" min="0" max="1" value="{{ form_data.pi0|default:'0.5' }}">
+      </div>
+      <div class="form-group">
+        <label>π estado 1</label>
+        <input class="field" type="number" name="pi1" step="0.01" min="0" max="1" value="{{ form_data.pi1|default:'0.5' }}">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Matriz de transición A</h2>
+    <p style="font-size:0.82rem; color:#666; margin-bottom:0.75rem;">Cada fila debe sumar 1.0</p>
+    <div class="grid-4">
+      <div class="form-group">
+        <label>A[0→0]</label>
+        <input class="field" type="number" name="a00" step="0.01" min="0" max="1" value="{{ form_data.a00|default:'0.7' }}">
+      </div>
+      <div class="form-group">
+        <label>A[0→1]</label>
+        <input class="field" type="number" name="a01" step="0.01" min="0" max="1" value="{{ form_data.a01|default:'0.3' }}">
+      </div>
+      <div class="form-group">
+        <label>A[1→0]</label>
+        <input class="field" type="number" name="a10" step="0.01" min="0" max="1" value="{{ form_data.a10|default:'0.4' }}">
+      </div>
+      <div class="form-group">
+        <label>A[1→1]</label>
+        <input class="field" type="number" name="a11" step="0.01" min="0" max="1" value="{{ form_data.a11|default:'0.6' }}">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Matriz de emisión B</h2>
+    <p style="font-size:0.82rem; color:#666; margin-bottom:0.75rem;">Cada fila debe sumar 1.0 (0=Caminar, 1=Compras, 2=Limpiar)</p>
+    <div style="display:grid; grid-template-columns: repeat(6, 1fr); gap:0.75rem;">
+      <div class="form-group">
+        <label>B[0,Cam]</label>
+        <input class="field" type="number" name="b00" step="0.01" min="0" max="1" value="{{ form_data.b00|default:'0.6' }}">
+      </div>
+      <div class="form-group">
+        <label>B[0,Com]</label>
+        <input class="field" type="number" name="b01" step="0.01" min="0" max="1" value="{{ form_data.b01|default:'0.3' }}">
+      </div>
+      <div class="form-group">
+        <label>B[0,Lim]</label>
+        <input class="field" type="number" name="b02" step="0.01" min="0" max="1" value="{{ form_data.b02|default:'0.1' }}">
+      </div>
+      <div class="form-group">
+        <label>B[1,Cam]</label>
+        <input class="field" type="number" name="b10" step="0.01" min="0" max="1" value="{{ form_data.b10|default:'0.1' }}">
+      </div>
+      <div class="form-group">
+        <label>B[1,Com]</label>
+        <input class="field" type="number" name="b11" step="0.01" min="0" max="1" value="{{ form_data.b11|default:'0.4' }}">
+      </div>
+      <div class="form-group">
+        <label>B[1,Lim]</label>
+        <input class="field" type="number" name="b12" step="0.01" min="0" max="1" value="{{ form_data.b12|default:'0.5' }}">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Secuencia de observaciones</h2>
     <div class="form-group">
-      <label>Secuencia de observaciones (0, 1 o 2)</label>
-      <input name="obs_str" class="field" placeholder="0,1,2,0,1"
-        value="{{ form_data.obs_str|default:'0,1,2,1,0,2,0,1' }}" style="font-size:16px;letter-spacing:2px">
+      <label>Observaciones (CSV)</label>
+      <input class="field" type="text" name="obs_str" placeholder="0,1,2,0,1"
+             value="{{ form_data.obs_str|default:'0,1,2' }}">
+      <p style="font-size:0.8rem; color:#666; margin-top:0.3rem;">Separa con comas. 0=Caminar, 1=Compras, 2=Limpiar</p>
     </div>
-    <div style="font-size:12px;color:#888;margin-top:4px">
-      Longitud recomendada: entre 4 y 20 valores.
-    </div>
-  </div>
-
-  {% comment %} ── Estados ocultos ── {% endcomment %}
-  <div class="card">
-    <h2>Paso 2 — Nombres de los estados ocultos (el clima)</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:0.75rem">Puedes cambiarlos a lo que quieras. Por defecto: Lluvia y
-      Sol.</p>
-    <div class="grid2">
-      <div class="form-group">
-        <label>Estado 0 (ej: Lluvia, Enfermo, Triste)</label>
-        <input name="s0" class="field" value="{{ form_data.s0|default:'Lluvia' }}">
-      </div>
-      <div class="form-group">
-        <label>Estado 1 (ej: Sol, Sano, Feliz)</label>
-        <input name="s1" class="field" value="{{ form_data.s1|default:'Sol' }}">
-      </div>
+    <div class="form-group" style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0;">
+      <input type="checkbox" name="entrenar" value="1" id="entrenar"
+             {% if form_data.entrenar == '1' %}checked{% endif %}
+             style="width:auto;">
+      <label for="entrenar" style="font-weight:400;">Re-estimar parámetros con Baum-Welch (EM)</label>
     </div>
   </div>
 
-  {% comment %} ── π distribución inicial ── {% endcomment %}
-  <div class="card">
-    <h2>Paso 3 — ¿Con qué probabilidad empieza cada estado?</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:0.75rem">
-      <strong>π (pi)</strong> = probabilidad del clima el primer día. Los dos valores deben sumar 1.0.<br>
-      Ejemplo: 0.6 y 0.4 significa "60% de chance de que el día 1 sea lluvia".
-    </p>
-    <div class="grid2">
-      <div class="form-group">
-        <label>π de "{{ form_data.s0|default:'Lluvia' }}" (Estado 0)</label>
-        <input name="pi0" type="number" step="0.01" min="0" max="1" class="field"
-          value="{{ form_data.pi0|default:'0.6' }}">
-      </div>
-      <div class="form-group">
-        <label>π de "{{ form_data.s1|default:'Sol' }}" (Estado 1)</label>
-        <input name="pi1" type="number" step="0.01" min="0" max="1" class="field"
-          value="{{ form_data.pi1|default:'0.4' }}">
-      </div>
-    </div>
-  </div>
-
-  {% comment %} ── Matriz A ── {% endcomment %}
-  <div class="card">
-    <h2>Paso 4 — ¿Cómo cambia el clima de un día al otro? (Matriz A)</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:0.75rem">
-      <strong>Matriz de transición A</strong> = probabilidad de que el clima de hoy sea X dado que ayer fue Y.<br>
-      Cada fila debe sumar 1.0. Ejemplo: si hoy llueve, mañana hay 70% de chance de que siga lloviendo.
-    </p>
-    <table style="font-size:13px;margin-bottom:0.5rem">
-      <thead>
-        <tr>
-          <th style="width:160px">Si ayer fue...</th>
-          <th>→ Mañana es "{{ form_data.s0|default:'Lluvia' }}"</th>
-          <th>→ Mañana es "{{ form_data.s1|default:'Sol' }}"</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td style="color:#666">"{{ form_data.s0|default:'Lluvia' }}"</td>
-          <td><input name="a00" type="number" step="0.01" min="0" max="1" class="field"
-              value="{{ form_data.a00|default:'0.7' }}" style="width:80px"> <span
-              style="font-size:12px;color:#aaa">sigue igual</span></td>
-          <td><input name="a01" type="number" step="0.01" min="0" max="1" class="field"
-              value="{{ form_data.a01|default:'0.3' }}" style="width:80px"> <span
-              style="font-size:12px;color:#aaa">cambia</span></td>
-        </tr>
-        <tr>
-          <td style="color:#666">"{{ form_data.s1|default:'Sol' }}"</td>
-          <td><input name="a10" type="number" step="0.01" min="0" max="1" class="field"
-              value="{{ form_data.a10|default:'0.4' }}" style="width:80px"> <span
-              style="font-size:12px;color:#aaa">cambia</span></td>
-          <td><input name="a11" type="number" step="0.01" min="0" max="1" class="field"
-              value="{{ form_data.a11|default:'0.6' }}" style="width:80px"> <span
-              style="font-size:12px;color:#aaa">sigue igual</span></td>
-        </tr>
-      </tbody>
-    </table>
-    <div style="font-size:12px;color:#888">Fila 1 suma: a00 + a01 = 1.0 &nbsp;|&nbsp; Fila 2 suma: a10 + a11 = 1.0</div>
-  </div>
-
-  {% comment %} ── Matriz B ── {% endcomment %}
-  <div class="card">
-    <h2>Paso 5 — ¿Qué hace tu amigo según el clima? (Matriz B)</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:0.75rem">
-      <strong>Matriz de emisión B</strong> = probabilidad de cada actividad dado el clima del día.<br>
-      Cada fila debe sumar 1.0. Ejemplo: cuando llueve, 60% de chance de que salga a caminar (bajo techo).
-    </p>
-    <table style="font-size:13px;margin-bottom:0.5rem">
-      <thead>
-        <tr>
-          <th style="width:120px">Clima</th>
-          <th>🚶 Caminar (0)</th>
-          <th>🛒 Compras (1)</th>
-          <th>🧹 Limpiar (2)</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td style="color:#666">"{{ form_data.s0|default:'Lluvia' }}"</td>
-          <td><input name="b00" type="number" step="0.01" min="0" max="1" class="field"
-              value="{{ form_data.b00|default:'0.6' }}" style="width:72px"></td>
-          <td><input name="b01" type="number" step="0.01" min="0" max="1" class="field"
-              value="{{ form_data.b01|default:'0.3' }}" style="width:72px"></td>
-          <td><input name="b02" type="number" step="0.01" min="0" max="1" class="field"
-              value="{{ form_data.b02|default:'0.1' }}" style="width:72px"></td>
-        </tr>
-        <tr>
-          <td style="color:#666">"{{ form_data.s1|default:'Sol' }}"</td>
-          <td><input name="b10" type="number" step="0.01" min="0" max="1" class="field"
-              value="{{ form_data.b10|default:'0.1' }}" style="width:72px"></td>
-          <td><input name="b11" type="number" step="0.01" min="0" max="1" class="field"
-              value="{{ form_data.b11|default:'0.4' }}" style="width:72px"></td>
-          <td><input name="b12" type="number" step="0.01" min="0" max="1" class="field"
-              value="{{ form_data.b12|default:'0.5' }}" style="width:72px"></td>
-        </tr>
-      </tbody>
-    </table>
-    <div style="font-size:12px;color:#888">Cada fila debe sumar 1.0</div>
-  </div>
-
-  {% comment %} ── Baum-Welch ── {% endcomment %}
-  <div class="card" style="background:#fafafa">
-    <h2>Opcional — Entrenar el modelo (Baum-Welch)</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:0.75rem">
-      Si no sabes qué valores poner en A y B, activa esto. El algoritmo <strong>aprende las probabilidades</strong>
-      solo mirando la secuencia de actividades. Re-estima π, A y B automáticamente.
-    </p>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
-      <input type="checkbox" name="entrenar" value="1" {% if form_data.entrenar %}checked{% endif %}
-        style="width:16px;height:16px">
-      Activar Baum-Welch (15 iteraciones)
-    </label>
-  </div>
-
-  <div class="row" style="margin-bottom:2rem">
-    <button type="submit" class="btn btn-primary" style="padding:10px 24px;font-size:15px">Calcular →</button>
-    {% if resultado %}
-    <a href="{% url 'crear' %}" class="btn btn-secondary">Guardar como experimento</a>
-    {% endif %}
+  <div class="actions">
+    <button type="submit" class="btn btn-primary">Ejecutar</button>
+    <a href="{% url 'simulador' %}" class="btn btn-secondary">Limpiar</a>
   </div>
 </form>
 
-{% comment %} ── Resultados ── {% endcomment %}
 {% if resultado %}
-<hr class="sep">
-<h2 style="margin-bottom:1rem">Resultados</h2>
+  <div class="card" style="margin-top:1.5rem; border-left: 4px solid #1a237e;">
+    <h2>Resultado</h2>
 
-<div class="grid2">
-  <div class="card">
-    <h2>Algoritmo Forward</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:6px">
-      Pregunta: <em>¿Qué tan probable es que tu amigo haya hecho exactamente esa secuencia de actividades?</em>
-    </p>
-    <p style="font-size:1.4rem;font-weight:600;color:#7c6af7">P = {{ resultado.prob|floatformat:8 }}</p>
-    <p style="font-size:12px;color:#aaa;margin-top:4px">
-      Un número muy pequeño es normal — es la probabilidad de una secuencia específica entre todas las posibles.
-    </p>
     {% if resultado.entrenado %}
-    <p style="font-size:12px;color:#2d7a4f;margin-top:6px;font-weight:500">✓ Parámetros re-estimados con Baum-Welch</p>
+      <p style="font-size:0.85rem; background:#e8f5e9; color:#2e7d32; padding:0.5rem 0.75rem; border-radius:4px; margin-bottom:1rem;">
+        Parámetros re-estimados con Baum-Welch (15 iteraciones). Los valores del formulario se actualizaron.
+      </p>
+    {% endif %}
+
+    <p style="font-size:1.1rem; margin-bottom:1rem;">
+      <strong>P(obs | modelo) — Forward =</strong>
+      <span style="color:#1a237e; font-size:1.3rem;">{{ resultado.prob|floatformat:8 }}</span>
+    </p>
+
+    <h2>Secuencia de Viterbi</h2>
+    <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:1.25rem;">
+      {% for obs_name, st_name, st_idx in resultado.pares %}
+        <div style="text-align:center; min-width:70px;">
+          <div style="font-size:0.78rem; color:#666; margin-bottom:0.2rem;">{{ obs_name }}</div>
+          <span class="badge" style="background:#e8eaf6; color:#1a237e; display:block;">{{ st_name }}</span>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if resultado.entrenado %}
+      <div class="grid-2">
+        <div>
+          <p style="margin-bottom:0.4rem;"><strong>π estimado</strong></p>
+          <table>
+            <tr><td>Estado 0</td><td>{{ resultado.pi.0|floatformat:4 }}</td></tr>
+            <tr><td>Estado 1</td><td>{{ resultado.pi.1|floatformat:4 }}</td></tr>
+          </table>
+        </div>
+        <div>
+          <p style="margin-bottom:0.4rem;"><strong>A estimada</strong></p>
+          <table>
+            <thead><tr><th></th><th>→ S0</th><th>→ S1</th></tr></thead>
+            <tbody>
+              <tr><th>S0</th><td>{{ resultado.A.0.0|floatformat:4 }}</td><td>{{ resultado.A.0.1|floatformat:4 }}</td></tr>
+              <tr><th>S1</th><td>{{ resultado.A.1.0|floatformat:4 }}</td><td>{{ resultado.A.1.1|floatformat:4 }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     {% endif %}
   </div>
-
-  <div class="card">
-    <h2>Algoritmo Viterbi</h2>
-    <p style="font-size:13px;color:#666;margin-bottom:6px">
-      Pregunta: <em>¿Cuál fue el clima más probable cada día?</em>
-    </p>
-    <p style="font-size:13px;color:#444">
-      Dado lo que hizo tu amigo cada día, esta es la secuencia de clima más probable:
-    </p>
-  </div>
-</div>
-
-<div class="card">
-  <h2>Día a día — actividad observada → clima deducido</h2>
-  <div style="overflow-x:auto">
-    <table>
-      <thead>
-        <tr>
-          <th>Día</th>
-          <th>Tu amigo hizo...</th>
-          <th>El clima probablemente era...</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for obs_n, st_n, st_idx in resultado.pares %}
-        <tr>
-          <td style="color:#aaa;font-size:13px">{{ forloop.counter }}</td>
-          <td>
-            {% if obs_n == 'Caminar' %}🚶{% elif obs_n == 'Compras' %}🛒{% else %}🧹{% endif %}
-            {{ obs_n }}
-          </td>
-          <td>
-            <span class="tag {% if st_idx == 0 %}tag-p{% else %}tag-t{% endif %}">
-              {{ st_n }}
-            </span>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
 {% endif %}
-
 {% endblock %}
